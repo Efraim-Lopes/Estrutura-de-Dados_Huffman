@@ -1,4 +1,8 @@
 # Estrutura-de-Dados_Huffman
-Projeto de Estrutura de Dados 2023.2;
-Professor: Márcio;
-Alunos: Efraim Lopes, Kauã Lessa, Bruno Weverton, Pedro Resende.
+Projeto da disciplina Estrutura de Dados da Universidade Federal de Alagoas;
+
+Professor: Márcio Riberio;
+
+Alunos: Kauã Lessa, Efraim Lopes, Bruno Weverton, Pedro Resende;
+
+Objetivo do projeto: Aplicar os conhecimentos adquiridos na matéria na criação de um algoritmo de Huffman.
