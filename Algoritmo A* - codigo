@@ -1,0 +1,222 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <math.h>
+
+#define GRID_SIZE 10
+
+// Estrutura para representar um ponto no grid
+typedef struct {
+    int x, y;
+} Point;
+
+// Estrutura para representar o grid
+typedef struct {
+    int** grid;
+    int size;
+} Grid;
+
+// Estrutura para representar um nó no algoritmo A*
+typedef struct Node {
+    Point position;      // Posição do nó no grid
+    int cost;            // Custo acumulado até este nó
+    int heuristic;       // Valor da heurística (distância até o destino)
+    struct Node* parent; // Nó pai no caminho
+    struct Node* next;   // Próximo nó na fila de prioridade
+} Node;
+
+// Estrutura para representar uma fila de prioridade (lista encadeada de nós)
+typedef struct {
+    Node* head; // Cabeça da fila
+} PriorityQueue;
+
+// Função para criar um grid vazio
+Grid* createGrid() {
+    Grid* grid = (Grid*)malloc(sizeof(Grid));
+    grid->size = GRID_SIZE;
+    grid->grid = (int*)malloc(GRID_SIZE * sizeof(int));
+    for (int i = 0; i < GRID_SIZE; i++) {
+        grid->grid[i] = (int*)malloc(GRID_SIZE * sizeof(int));
+        for (int j = 0; j < GRID_SIZE; j++) {
+            // Defina os obstáculos aqui (0 para células livres, 1 para obstáculos)
+            grid->grid[i][j] = 0;
+        }
+    }
+    return grid;
+}
+
+// Função para destruir o grid e liberar a memória alocada
+void destroyGrid(Grid* grid) {
+    for (int i = 0; i < grid->size; i++) {
+        free(grid->grid[i]);
+    }
+    free(grid->grid);
+    free(grid);
+}
+
+// Função para criar um novo nó com posição, custo, heurística e nó pai especificados
+Node* createNode(Point position, int cost, int heuristic, Node* parent) {
+    Node* node = (Node*)malloc(sizeof(Node));
+    node->position = position;
+    node->cost = cost;
+    node->heuristic = heuristic;
+    node->parent = parent;
+    node->next = NULL;
+    return node;
+}
+
+// Função para destruir um nó e liberar a memória alocada
+void destroyNode(Node* node) {
+    free(node);
+}
+
+// Função para calcular a distância de Manhattan entre dois pontos
+int manhattanDistance(Point a, Point b) {
+    return abs(a.x - b.x) + abs(a.y - b.y);
+}
+
+// Função para calcular a heurística (distância de Manhattan até o destino)
+int calculateHeuristic(Point current, Point goal) {
+    return manhattanDistance(current, goal);
+}
+
+// Função para verificar se um ponto está dentro dos limites do grid
+bool isInsideGrid(Point p, Grid* grid) {
+    return p.x >= 0 && p.x < grid->size && p.y >= 0 && p.y < grid->size;
+}
+
+// Função para verificar se um ponto é um obstáculo no grid
+bool isObstacle(Point p, Grid* grid) {
+    return grid->grid[p.x][p.y] == 1;
+}
+
+// Função para imprimir o caminho encontrado
+void printPath(Node* node, Grid* grid) {
+    if (node == NULL) return;
+    printPath(node->parent, grid);
+    printf("(%d, %d) -> ", node->position.x, node->position.y);
+    // Você pode desenhar o grid com o caminho aqui se desejar
+    grid->grid[node->position.x][node->position.y] = 2;  // 2 representa o caminho
+}
+
+// Função para extrair o nó com o menor custo da fila de prioridade
+bool extractMin(PriorityQueue* openSet, Node** minNode) {
+    if (openSet->head == NULL) {
+        return false;
+    }
+    
+    *minNode = openSet->head;
+    Node* current = openSet->head;
+    
+    while (current != NULL) {
+        if (current->cost + current->heuristic < (*minNode)->cost + (*minNode)->heuristic) {
+            *minNode = current;
+        }
+        current = current->next;
+    }
+    
+    return true;
+}
+
+// Função principal do algoritmo A*
+bool astar(Grid* grid, Point start, Point goal) {
+    PriorityQueue openSet;
+    openSet.head = NULL;
+    
+    Node* startNode = createNode(start, 0, calculateHeuristic(start, goal), NULL);
+    startNode->cost = 0;
+    
+    openSet.head = startNode;
+
+    while (openSet.head != NULL) {
+        Node* current = NULL;
+        if (!extractMin(&openSet, &current)) {
+            break; // Fila vazia, nenhum caminho encontrado
+        }
+
+        // Remova o nó atual da lista de abertos
+        if (openSet.head == current) {
+            openSet.head = current->next;
+        } else {
+            Node* prev = openSet.head;
+            while (prev->next != current) {
+                prev = prev->next;
+            }
+            prev->next = current->next;
+        }
+
+        if (current->position.x == goal.x && current->position.y == goal.y) {
+            printf("Caminho encontrado:\n");
+            printPath(current, grid);
+            return true;
+        }
+        
+        // Gere os vizinhos do nó atual e processe-os
+        Point neighbors[] = {
+            {current->position.x + 1, current->position.y},
+            {current->position.x - 1, current->position.y},
+            {current->position.x, current->position.y + 1},
+            {current->position.x, current->position.y - 1}
+        };
+
+        for (int i = 0; i < 4; i++) {
+            Point neighbor = neighbors[i];
+            if (isInsideGrid(neighbor, grid) && !isObstacle(neighbor, grid)) {
+                int neighborCost = current->cost + 1; // Custo unitário
+                int neighborHeuristic = calculateHeuristic(neighbor, goal);
+                Node* neighborNode = createNode(neighbor, neighborCost, neighborHeuristic, current);
+                neighborNode->next = openSet.head;
+                openSet.head = neighborNode;
+            }
+        }
+    }
+    
+    printf("Nenhum caminho encontrado.\n");
+    return false;
+}
+
+// Função principal
+int main() {
+    Grid* grid = createGrid();
+    
+    // Configurar obstáculos no grid (1 representa obstáculo)
+    grid->grid[1][2] = 1;
+    grid->grid[2][2] = 1;
+    grid->grid[3][2] = 1;
+    grid->grid[4][2] = 1;
+    grid->grid[5][2] = 1;
+    grid->grid[6][2] = 1;
+    grid->grid[7][2] = 1;
+    grid->grid[8][2] = 1;
+    grid->grid[8][3] = 1;
+    grid->grid[8][4] = 1;
+    grid->grid[8][5] = 1;
+    grid->grid[8][6] = 1;
+    grid->grid[8][7] = 1;
+    grid->grid[8][8] = 1;
+    grid->grid[7][8] = 1;
+    
+    Point start = {0, 0};  // Ponto de partida
+    Point goal = {9, 9};   // Ponto de destino
+    
+    if (astar(grid, start, goal)) {
+        printf("\n");
+        // Imprimir o grid com o caminho
+        for (int i = 0; i < grid->size; i++) {
+            for (int j = 0; j < grid->size; j++) {
+                if (grid->grid[i][j] == 0) {
+                    printf(". ");  // Célula livre
+                } else if (grid->grid[i][j] == 1) {
+                    printf("# ");  // Obstáculo
+                } else {
+                    printf("X ");  // Caminho
+                }
+            }
+            printf("\n");
+        }
+    }
+    
+    destroyGrid(grid);
+    
+    return 0;
+}
