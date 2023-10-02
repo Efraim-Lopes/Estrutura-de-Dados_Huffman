@@ -14,9 +14,6 @@ Especificações do Projeto:
 Itens do Projeto:
 
   Implementação do Algoritmo de Huffman;
-  
   Seminário sobre algoritmo A*;
-  
   Comparação e plotagem ABB vs AVL;
-  
   Testes unitários em todos os códigos;
