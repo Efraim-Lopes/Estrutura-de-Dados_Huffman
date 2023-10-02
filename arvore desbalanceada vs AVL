@@ -1,0 +1,162 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+struct No {
+    int chave;
+    struct No* esquerda;
+    struct No* direita;
+    int altura;
+};
+
+int maximo(int a, int b) {
+    return (a > b) ? a : b;
+}
+
+int altura(struct No* no) {
+    if (no == NULL)
+        return 0;
+    return no->altura;
+}
+
+int obterBalanceamento(struct No* no) {
+    if (no == NULL)
+        return 0;
+    return altura(no->esquerda) - altura(no->direita);
+}
+
+// Função para criar um novo nó
+struct No* novoNo(int chave) {
+    struct No* no = (struct No*)malloc(sizeof(struct No));
+    no->chave = chave;
+    no->esquerda = no->direita = NULL;
+    no->altura = 1; 
+    return no;
+}
+
+// Função para inserir um novo nó na árvore desbalanceada
+struct No* inserirABB(struct No* raiz, int chave, int* comparacoes) {
+    if (raiz == NULL)
+        return novoNo(chave);
+    (*comparacoes)++;
+    if (chave < raiz->chave)
+        raiz->esquerda = inserirABB(raiz->esquerda, chave, comparacoes);
+    else if (chave > raiz->chave)
+        raiz->direita = inserirABB(raiz->direita, chave, comparacoes);
+    return raiz;
+}
+
+// Função para rotacionar a árvore AVL
+struct No* rotacaoDireita(struct No* y) {
+    struct No* x = y->esquerda;
+    struct No* T2 = x->direita;
+
+    x->direita = y;
+    y->esquerda = T2;
+
+    y->altura = maximo(altura(y->esquerda), altura(y->direita)) + 1;
+    x->altura = maximo(altura(x->esquerda), altura(x->direita)) + 1;
+
+    return x;
+}
+
+// Funções para rotacionar a árvore AVL
+struct No* rotacaoEsquerda(struct No* x) {
+    struct No* y = x->direita;
+    struct No* T2 = y->esquerda;
+
+    y->esquerda = x;
+    x->direita = T2;
+
+    x->altura = maximo(altura(x->esquerda), altura(x->direita)) + 1;
+    y->altura = maximo(altura(y->esquerda), altura(y->direita)) + 1;
+
+    return y;
+}
+
+// Função para inserir um novo nó na AVL
+struct No* inserirAVL(struct No* no, int chave, int* comparacoes) {
+    if (no == NULL)
+        return novoNo(chave);
+    (*comparacoes)++;
+    if (chave < no->chave)
+        no->esquerda = inserirAVL(no->esquerda, chave, comparacoes);
+    else if (chave > no->chave)
+        no->direita = inserirAVL(no->direita, chave, comparacoes);
+    else // Duplicatas não são permitidas na AVL
+        return no;
+
+    no->altura = 1 + maximo(altura(no->esquerda), altura(no->direita));
+
+    int balanceamento = obterBalanceamento(no);
+
+    // Rotações para balancear a árvore
+    if (balanceamento > 1 && chave < no->esquerda->chave)
+        return rotacaoDireita(no);
+
+    if (balanceamento < -1 && chave > no->direita->chave)
+        return rotacaoEsquerda(no);
+
+    if (balanceamento > 1 && chave > no->esquerda->chave) {
+        no->esquerda = rotacaoEsquerda(no->esquerda);
+        return rotacaoDireita(no);
+    }
+
+    if (balanceamento < -1 && chave < no->direita->chave) {
+        no->direita = rotacaoDireita(no->direita);
+        return rotacaoEsquerda(no);
+    }
+
+    return no;
+}
+
+// Função para contar o número de comparações para encontrar um nó
+int contarComparacoes(struct No* raiz, int chave) {
+    int comparacoes = 0;
+    while (raiz != NULL) {
+        comparacoes++;
+        if (chave == raiz->chave)
+            break;
+        else if (chave < raiz->chave)
+            raiz = raiz->esquerda;
+        else
+            raiz = raiz->direita;
+    }
+    return comparacoes;
+}
+
+
+int main() {
+    struct No* raizABB = NULL;
+    struct No* raizAVL = NULL;
+    int numComparacoesABB = 0;
+    int numComparacoesAVL = 0;
+
+
+    //==============================================================================================================================//
+    // Inserir elementos na árvore desbalanceada e AVL
+    int elementos[] = { 50, 30, 20, 40, 70, 60, 80, 10, 25, 35, 45, 55, 65, 75, 90, 5, 15, 27, 37, 47, 57, 67, 77, 87, 97, 102, 103, 104, 105, 106, 107, 108, 109, 110 };
+    int numeroSorteado = 102;
+    //==============================================================================================================================//
+
+
+    // Número de elementos no array
+    int numElementos = sizeof(elementos) / sizeof(elementos[0]);
+
+    // Construir a árvore desbalanceada
+    for (int i = 0; i < numElementos; i++) {
+        raizABB = inserirABB(raizABB, elementos[i], &numComparacoesABB);
+    }
+
+    // Construir a AVL
+    for (int i = 0; i < numElementos; i++) {
+        raizAVL = inserirAVL(raizAVL, elementos[i], &numComparacoesAVL);
+    }
+
+    // Contar comparações para encontrar o número sorteado
+    numComparacoesABB = contarComparacoes(raizABB, numeroSorteado);
+    numComparacoesAVL = contarComparacoes(raizAVL, numeroSorteado);
+    
+    printf("Número sorteado: %d\n", numeroSorteado);
+    printf("Número de comparações para encontrar na árvore desbalanceada: %d\n", numComparacoesABB);
+    printf("Número de comparações para encontrar na AVL: %d\n", numComparacoesAVL);
+}
