@@ -8,7 +8,6 @@ Alunos: Kauã Lessa, Efraim Lopes, Bruno Weverton, Pedro Resende;
 Objetivo do projeto: Aplicar os conhecimentos adquiridos na matéria na criação de um algoritmo de Huffman.
 
 Especificações do Projeto:
-
   Data da apresentação: 02/10 (Segunda-Feira)
 
 Itens do Projeto:
